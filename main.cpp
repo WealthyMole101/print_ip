@@ -30,9 +30,8 @@ template<typename T>
 struct is_container : std::integral_constant<bool, has_begin_end<T>::beg_value && has_begin_end<T>::end_value> 
 { };
 
-template <typename T>
-typename enable_if<(is_container<T>::value && !std::is_same<T, std::string>::value), T>::type
-print_ip(T ip)
+template <typename T, enable_if_t<(is_container<T>::value && !std::is_same_v<T, std::string>), T>...>
+void print_ip(T ip)
 {
     for (auto it = ip.begin(); it != ip.end(); it++){
         cout << *it;
@@ -41,12 +40,10 @@ print_ip(T ip)
         }
     }
     cout << endl;
-    return ip;
 }
 
-template <typename T>
-typename enable_if<is_integral<T>::value, T>::type
-print_ip(T ip)
+template <typename T, enable_if_t<is_integral_v<T>, T>...>
+void print_ip(T ip)
 {
     int size = sizeof(ip);
 
@@ -59,15 +56,12 @@ print_ip(T ip)
     }
 
     cout << endl;
-    return 0;
 }
 
-template <typename T>
-typename enable_if<is_same<T, std::string>::value, T>::type
-print_ip(T ip)
+template <typename T, enable_if_t<is_same_v<T, std::string>, T>...>
+void print_ip(T ip)
 {
     cout << ip << endl;
-    return "";
 }
 
 int main(int, char **) 
