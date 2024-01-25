@@ -5,20 +5,45 @@
 
 using namespace std;
 
+// is_container from https://stackoverflow.com/questions/9407367/determine-if-a-type-is-an-stl-container-at-compile-time
+
 template <typename T>
-struct is_string
+struct has_begin_end
 {
-    static const bool value = false;
+    template<typename C> static char (&f(typename std::enable_if<
+      std::is_same<decltype(static_cast<typename C::const_iterator (C::*)() const>(&C::begin)),
+      typename C::const_iterator(C::*)() const>::value, void>::type*))[1];
+
+    template<typename C> static char (&f(...))[2];
+
+    template<typename C> static char (&g(typename std::enable_if<
+      std::is_same<decltype(static_cast<typename C::const_iterator (C::*)() const>(&C::end)),
+      typename C::const_iterator(C::*)() const>::value, void>::type*))[1];
+
+    template<typename C> static char (&g(...))[2];
+
+    static bool const beg_value = sizeof(f<T>(0)) == 1;
+    static bool const end_value = sizeof(g<T>(0)) == 1;
 };
 
-template <>
-struct is_string<string> 
-{
-    static const bool value = true;
-};
+template<typename T> 
+struct is_container : std::integral_constant<bool, has_begin_end<T>::beg_value && has_begin_end<T>::end_value> 
+{ };
 
-template <typename T> 
-auto print_ip(T ip) -> decltype(T() == 0)
+template <typename T, enable_if_t<(is_container<T>::value && !std::is_same_v<T, std::string>), T>...>
+void print_ip(T ip)
+{
+    for (auto it = ip.begin(); it != ip.end(); it++){
+        cout << *it;
+        if (std::distance<decltype(it)>(it, ip.end()) > 1) {
+	    cout << ".";
+        }
+    }
+    cout << endl;
+}
+
+template <typename T, enable_if_t<is_integral_v<T>, T>...>
+void print_ip(T ip)
 {
     int size = sizeof(ip);
 
@@ -33,16 +58,10 @@ auto print_ip(T ip) -> decltype(T() == 0)
     cout << endl;
 }
 
-template <typename T> 
-auto print_ip(T ip) -> decltype(ip.begin())
+template <typename T, enable_if_t<is_same_v<T, std::string>, T>...>
+void print_ip(T ip)
 {
-    for (auto it = ip.begin(); it != ip.end(); it++){
-        cout << *it;
-        if (!is_string<T>::value && std::distance<decltype(it)>(it, ip.end()) > 1) {
-	    cout << ".";
-        }
-    }
-    cout << endl;
+    cout << ip << endl;
 }
 
 int main(int, char **) 
